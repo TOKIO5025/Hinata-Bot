@@ -1,0 +1,62 @@
+<script>
+  const chat = document.getElementById('chat');
+  const input = document.getElementById('input');
+
+  function agregarMensaje(texto, clase) {
+    const msg = document.createElement('div');
+    msg.className = `message ${clase}`;
+    msg.innerText = texto;
+    chat.appendChild(msg);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function hablar(texto) {
+    const voz = new SpeechSynthesisUtterance(texto);
+    voz.lang = 'es-ES';
+    voz.pitch = 1.4;
+    voz.rate = 1;
+    voz.volume = 1;
+    speechSynthesis.speak(voz);
+  }
+
+  async function evaluarConIA(pregunta) {
+    const body = {
+      prompts: [pregunta],
+      imageBase64List: [],
+      mimeTypes: [],
+      temperature: 0.7
+    }
+
+    try {
+      const res = await fetch('https://g-mini-ia.vercel.app/api/gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+
+      const data = await res.json();
+      const respuesta = data?.candidates?.[0]?.content?.parts?.[0]?.text || "❌ No entendí bien eso.";
+
+      agregarMensaje(respuesta, 'hinata');
+      hablar(respuesta);
+    } catch (e) {
+      console.error('[Gemini Web Chat Error]', e);
+      const errorMsg = "⚠️ Hubo un error al conectar con la IA. Inténtalo más tarde.";
+      agregarMensaje(errorMsg, 'hinata');
+      hablar(errorMsg);
+    }
+  }
+
+  function send() {
+    const userText = input.value.trim();
+    if (!userText) return;
+
+    agregarMensaje(userText, 'user');
+    input.value = '';
+
+    // IA
+    setTimeout(() => {
+      evaluarConIA(userText);
+    }, 600);
+  }
+                                       </script>
